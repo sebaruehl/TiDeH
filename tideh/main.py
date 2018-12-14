@@ -330,13 +330,16 @@ def training_error_optimized(param, event_data, obs_time=6, pred_time=168, e_win
 def training_cross_validation(events_data, iterations, start_values, simplex=None, obs_time=6, pred_time=168,
                               e_window_size=4, e_window_stride=1, kernel_int=functions.integral_zhao_vec,
                               p=functions.infectious_rate_tweets_vec, kernel=functions.kernel_zhao_vec,
-                              dt=0.1, p_window=4, tol=1e-4):
+                              dt=0.1, p_window=4, tol=1e-4, cores=None):
     """
     Trains parameters of infectious rate with a cross validation approach.
 
     Should use optimized functions (all passed functions should expect np-arrays as input).
 
     For training taum use 1/taum!
+
+    An increase in runtime is possible through using multi-core processing. The number of used cores can be modified by
+    the cores parameter.
 
     :param events_data: list of all event_data tuples, should be in nd-array format (one for each file)
     :param iterations: iteration count for cross validation
@@ -353,6 +356,7 @@ def training_cross_validation(events_data, iterations, start_values, simplex=Non
     :param dt: interval width for numerical integral calculation
     :param p_window: bin width for prediction (in hours)
     :param tol: tolerance for termination
+    :param cores: number of cores which should be used.
     :return: tuple, first element holding 3-tuple of mean training error, median training error and array of trained
     parameters, second element holds tuple of array of training for each iteration and array of prediction errors
     """
@@ -367,7 +371,7 @@ def training_cross_validation(events_data, iterations, start_values, simplex=Non
         filter_in = np.delete(np.arange(len(events_data)), slice(run, None, iterations))
         cur_events = [events_data[i] for i in filter_in]  # filter out the event_data objects
         train_res = training.train_optimized(start_values, cur_events, obs_time, pred_time, e_window_size,
-                                             e_window_stride, kernel_int, p, kernel, dt, p_window, simplex, tol)
+                                             e_window_stride, kernel_int, p, kernel, dt, p_window, simplex, tol, cores)
         param = train_res['x']
 
         # calculate training error on filtered files

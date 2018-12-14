@@ -20,6 +20,7 @@ from . import functions
 
 import numpy as np
 from scipy.optimize import minimize
+from multiprocessing import Pool
 
 
 def to_minimize(x, events_data, obs_time, pred_time, e_window_size, e_window_stride, kernel_int, p, kernel,
@@ -89,12 +90,14 @@ def train(start, events_data, obs_time=6, pred_time=168, e_window_size=4, e_wind
 
 
 def to_minimize_optimized(x, events_data, obs_time, pred_time, e_window_size, e_window_stride, kernel_int, p, kernel,
-                          dt, p_window):
+                          dt, p_window, cores=None):
     """
     Calculates training error for every given data_training set for given parameters and calculates the median training error
     used for minimization.
 
     Optimized version using numpy. Passed function should expect numpy arrays as input.
+
+    If the cores parameter is set, the workload is distributed to the specified amount of cores to reduce runtime.
 
     :param x: current parameters for infectious rate
     :param events_data: list of all event_data tuples, should be in nd-array format (one for each file)
@@ -108,15 +111,28 @@ def to_minimize_optimized(x, events_data, obs_time, pred_time, e_window_size, e_
     :param kernel: kernel function for prediction
     :param dt: interval width for numerical integral calculation
     :param p_window: bin width for prediction (\delta_{pred} in Kobayashi and Lambiotte 2016) (in hours)
+    :param cores: number of cores which should be used.
     :return: median of training errors
     """
     pred_errors = []
+    args = []
+
     for event_data in events_data:
         if event_data[1][0][1] > obs_time:  # no events in observation time -> skip
             continue
-        err = main.training_error_optimized(x, event_data, obs_time, pred_time, e_window_size, e_window_stride,
-                                            kernel_int, p, kernel, dt, p_window)
-        pred_errors.append(err)
+
+        if cores is not None:
+            args.append((x, event_data, obs_time, pred_time, e_window_size, e_window_stride, kernel_int, p, kernel, dt,
+                         p_window))
+
+        else:
+            err = main.training_error_optimized(x, event_data, obs_time, pred_time, e_window_size, e_window_stride,
+                                                kernel_int, p, kernel, dt, p_window)
+            pred_errors.append(err)
+
+    if cores is not None:
+        with Pool(processes=cores) as pool:
+            pred_errors = pool.starmap(main.training_error_optimized, args)
 
     err_med = np.median(pred_errors)
     return err_med
@@ -124,13 +140,15 @@ def to_minimize_optimized(x, events_data, obs_time, pred_time, e_window_size, e_
 
 def train_optimized(start, events_data, obs_time=6, pred_time=168, e_window_size=4, e_window_stride=1,
                     kernel_int=functions.integral_zhao_vec, p=functions.infectious_rate_tweets_vec,
-                    kernel=functions.kernel_zhao_vec, dt=0.1, p_window=4, simplex=None, tol=1e-4):
+                    kernel=functions.kernel_zhao_vec, dt=0.1, p_window=4, simplex=None, tol=1e-4, cores=None):
     """
     Trains parameters of infectious rate. Uses Nelder-Mead.
 
     If a simplex matrix array object is passed it will overwrite the start values.
 
     Optimized version using numpy. Passed function should expect numpy arrays as input.
+
+    If the cores parameter is set, the workload is distributed to the specified amount of cores to reduce runtime.
 
     :param start: start values
     :param events_data: list of all event_data tuples, should be in nd-array format (one for each file)
@@ -146,6 +164,7 @@ def train_optimized(start, events_data, obs_time=6, pred_time=168, e_window_size
     :param p_window: bin width for prediction (\delta_{pred} in Kobayashi and Lambiotte 2016) (in hours)
     :param simplex: array-matrix object holding initial simple matrix
     :param tol: tolerance for termination
+    :param cores: number of cores which should be used.
     :return: see scipy.optimize.minimize documentation
     """
     options = {
@@ -155,5 +174,5 @@ def train_optimized(start, events_data, obs_time=6, pred_time=168, e_window_size
     return minimize(to_minimize_optimized, start, method='Nelder-Mead',
                     args=(
                         events_data, obs_time, pred_time, e_window_size, e_window_stride, kernel_int, p, kernel, dt,
-                        p_window),
+                        p_window, cores),
                     tol=tol, options=options)
