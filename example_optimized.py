@@ -32,8 +32,8 @@ from tideh import estimate_parameters_optimized
 from tideh import predict_optimized
 
 filename = 'data/example/sample_file.txt'
-obs_time = 48  # observation time of 2 days
-pred_time = 168  # predict for one week
+obs_time = 48       # observation time of 2 days
+pred_time = 168     # predict for one week
 
 # the number of retweets is not necessary for the further steps
 # make sure that all times are loaded in the correct time unit (hours)

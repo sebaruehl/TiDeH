@@ -18,10 +18,11 @@ This code is developed by Sylvain Gauthier and Sebastian Rühl under the supervi
 from tideh import load_events_vec
 from tideh import training_cross_validation
 
-number_of_files = 100  # number of files to train on
-file_name_prefix = 'data/training/RT'  # file names prefix of files used for training
-iterations = 5   # number of cross validation iterations
-pred_time = 168  # prediction time (hours)
+number_of_files = 100                   # number of files to train on
+file_name_prefix = 'data/training/RT'   # file names prefix of files used for training
+iterations = 5                          # number of cross validation iterations
+obs_time = 6                            # observation time (hours)
+pred_time = 168                         # prediction time (hours)
 
 # get file paths of files to use for training
 file_names = [file_name_prefix + str(i) + '.txt' for i in range(1, number_of_files + 1)]
@@ -43,7 +44,7 @@ simplex = [
 start_values = [0.2, 0, 0.25]
 
 (mean_err, median_err, param), _ = training_cross_validation(events_data, iterations, start_values, simplex,
-                                                             pred_time=pred_time)
+                                                             obs_time=obs_time, pred_time=pred_time)
 
 print("Final mean training error: %0.3f" % mean_err)
 print("Final median training error: %0.3f" % median_err)

@@ -34,15 +34,13 @@ def predict_nb_retweets(events, obs_time, pred_time, p=fct.infectious_rate_tweet
     :param dt: interval width for numerical integral calculation
     :param p: infectious rate function
     :param p_max: maximum value of p
-    :return: 3-tuple holding estimated integral values, total number of predicted retweets, and total prediction error
+    :return: 2-tuple holding estimated intensity values, total number of predicted retweets
     """
     dp = sum([fol_count for _, fol_count in events[1:]]) / len(events[1:])
     if p_max is not None:
         dp = min(dp, 1. / p_max)
     t = obs_time
     lambda_t = [p(t) * sum([fol_count * kernel(t - event_time) for event_time, fol_count in events])]
-    times = [t]
-    i = 1
 
     while t < pred_time - dt:
         t += dt
@@ -52,10 +50,8 @@ def predict_nb_retweets(events, obs_time, pred_time, p=fct.infectious_rate_tweet
         alpha = dp * p(t) * dt
         ctk = 1. / (1 - alpha * kernel(0) / 2.)
         lambda_t.append(ctk * (ft + alpha * integral))
-        times.append(t)
-        i += 1
 
-    return lambda_t, dt * sum(lambda_t), times
+    return lambda_t, dt * sum(lambda_t)
 
 
 def predict_nb_retweets_vec(event_times, follower, obs_time, pred_time, p=fct.infectious_rate_tweets_vec,
@@ -77,7 +73,7 @@ def predict_nb_retweets_vec(event_times, follower, obs_time, pred_time, p=fct.in
     :param dt: interval width for numerical integral calculation
     :param p: infectious rate function
     :param p_max: maximum value of p
-    :return: 3-tuple holding estimated integral values, total number of predicted retweets, and total prediction error
+    :return: 2-tuple holding estimated intensity values, total number of predicted retweets
     """
     dp = follower[1:].mean()  # exclude initial tweet for better results
     if p_max is not None:

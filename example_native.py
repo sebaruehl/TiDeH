@@ -29,8 +29,8 @@ from tideh import load_events
 from tideh import predict
 
 filename = 'data/example/sample_file.txt'
-obs_time = 48  # observation time of 2 days
-pred_time = 168  # predict for one week
+obs_time = 48       # observation time of 2 days
+pred_time = 168     # predict for one week
 
 # the number of retweets is not necessary for the further steps
 # make sure that all times are loaded in the correct time unit (hours)

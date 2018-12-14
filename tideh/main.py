@@ -118,9 +118,9 @@ def predict(events, obs_time=6, pred_time=168, window=4, kernel=functions.kernel
     if params is None:
         params = []
 
-    lambda_t, total, _ = prediction.predict_nb_retweets(events=events_filt, obs_time=obs_time, pred_time=pred_time,
-                                                        p=lambda x: p(x, *params, **p_params), p_max=p_max, dt=dt,
-                                                        kernel=kernel)
+    lambda_t, total = prediction.predict_nb_retweets(events=events_filt, obs_time=obs_time, pred_time=pred_time,
+                                                     p=lambda x: p(x, *params, **p_params), p_max=p_max, dt=dt,
+                                                     kernel=kernel)
 
     events_time_pred = np.array([ev for ev, _ in events if ev > obs_time])
     win_int = int(window / dt)
