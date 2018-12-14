@@ -57,7 +57,7 @@ def to_minimize(x, events_data, obs_time, pred_time, e_window_size, e_window_str
 
 def train(start, events_data, obs_time=6, pred_time=168, e_window_size=4, e_window_stride=1,
           kernel_int=functions.integral_zhao_vec, p=functions.infectious_rate_tweets_vec,
-          kernel=functions.kernel_zhao_vec, dt=0.1, p_window=4, simplex=None):
+          kernel=functions.kernel_zhao_vec, dt=0.1, p_window=4, simplex=None, tol=1e-4):
     """
     Trains parameters of infectious rate. Uses Nelder-Mead.
 
@@ -76,6 +76,7 @@ def train(start, events_data, obs_time=6, pred_time=168, e_window_size=4, e_wind
     :param dt: interval width for numerical integral calculation
     :param p_window: bin width for prediction (in hours)
     :param simplex: array-matrix object holding initial simple matrix
+    :param tol: tolerance for termination
     :return: see scipy.optimize.minimize documentation
     """
     options = {
@@ -84,7 +85,7 @@ def train(start, events_data, obs_time=6, pred_time=168, e_window_size=4, e_wind
 
     return minimize(to_minimize, start, method='Nelder-Mead', args=(
         events_data, obs_time, pred_time, e_window_size, e_window_stride, kernel_int, p, kernel, dt, p_window),
-                    tol=1e-4, options=options)
+                    tol=tol, options=options)
 
 
 def to_minimize_optimized(x, events_data, obs_time, pred_time, e_window_size, e_window_stride, kernel_int, p, kernel,
@@ -123,7 +124,7 @@ def to_minimize_optimized(x, events_data, obs_time, pred_time, e_window_size, e_
 
 def train_optimized(start, events_data, obs_time=6, pred_time=168, e_window_size=4, e_window_stride=1,
                     kernel_int=functions.integral_zhao_vec, p=functions.infectious_rate_tweets_vec,
-                    kernel=functions.kernel_zhao_vec, dt=0.1, p_window=4, simplex=None):
+                    kernel=functions.kernel_zhao_vec, dt=0.1, p_window=4, simplex=None, tol=1e-4):
     """
     Trains parameters of infectious rate. Uses Nelder-Mead.
 
@@ -144,6 +145,7 @@ def train_optimized(start, events_data, obs_time=6, pred_time=168, e_window_size
     :param dt: interval width for numerical integral calculation
     :param p_window: bin width for prediction (\delta_{pred} in Kobayashi and Lambiotte 2016) (in hours)
     :param simplex: array-matrix object holding initial simple matrix
+    :param tol: tolerance for termination
     :return: see scipy.optimize.minimize documentation
     """
     options = {
@@ -154,4 +156,4 @@ def train_optimized(start, events_data, obs_time=6, pred_time=168, e_window_size
                     args=(
                         events_data, obs_time, pred_time, e_window_size, e_window_stride, kernel_int, p, kernel, dt,
                         p_window),
-                    tol=1e-4, options=options)
+                    tol=tol, options=options)
