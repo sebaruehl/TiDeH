@@ -2,6 +2,7 @@
 This code trains the TiDeH parameters (r0, phi0, and taum) based on a retweet dataset (data/training/RT*.txt), assuming
 the parameters are same in the dataset.
 Please replace file paths according to your local directory structure.
+The runtime of this task can be improved through multi-core parallelization.
 
 Inputs are
 1) Data file that includes the retweet times and the number of followers
@@ -42,6 +43,7 @@ simplex = [
 ]
 start_values = [0.2, 0, 0.25]
 
+# for improved runtime set 'cores' parameter to number of available cores
 (mean_err, median_err, param), _ = training_cross_validation(events_data, iterations, start_values, simplex,
                                                              pred_time=pred_time)
 
