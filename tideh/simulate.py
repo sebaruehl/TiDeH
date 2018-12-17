@@ -17,6 +17,7 @@ References
 
 from . import functions
 from math import *
+import numpy as np
 import numpy.random as rand
 
 
@@ -83,7 +84,7 @@ def simulate_time_rescaling(runtime, kernel=functions.kernel_zhao, p=functions.i
     :param kernel: kernel function
     :param p: infectious rate function
     :param dt: integral evaluation interval size
-    :param follower_pool: follower counts used for simulation, makes last 3 parameters void
+    :param follower_pool: follower counts used for simulation, makes last 2 parameters void
     :param int_fol_cnt: initial follower value
     :param follower_mean: mean of generated followers
     :param split: percentage for when the follower should be generated very big
@@ -112,38 +113,48 @@ def simulate_time_rescaling(runtime, kernel=functions.kernel_zhao, p=functions.i
     return events
 
 
-def simulate_hawkes_time_increment(runtime, dt=0.01, lbd=functions.kernel_zhao, p=functions.infectious_rate_tweets,
-                                   start_time=0, int_fol_cnt=10000, follower_mean=200, split=0.02):
+def simulate_hawkes_time_increment(runtime, dt=0.01, kernel=functions.kernel_zhao_vec,
+                                   p=functions.infectious_rate_tweets, follower_pool=None, int_fol_cnt=10000,
+                                   follower_mean=200, split=0.02):
     """
-    Simulates time dependent Hawkes process using extended follower count simulation.
+    Simulates time dependent Hawkes process using time increments.
     Keeps track of all interesting intermediate values.
+
+    Follower counts can be taken from a pool passed to the function or generated.
 
     Very slow for big run times.
 
     :param runtime: time to simulate (in hours)
     :param dt: time steps
-    :param lbd: kernel function
+    :param kernel: kernel function
     :param p: infectious rate function
-    :param start_time: start simulation at a specific time (in hours)
+    :param follower_pool: follower counts used for simulation, makes last 3 parameters void
     :param int_fol_cnt: initial follower count for follower generation
     :param follower_mean: mean value of follower for follower generation
     :param split: split parameter for follower generation
-    :return: 3-tuple, holding list of event tuples, intensity for every interval, memory effect for every interval
+    :return: 3-tuple, holding list tuple of event_imes and follower nd-arrays, list of intensity for every interval,
+    list of memory effect for every interval
     """
-    events = [(0, int_fol_cnt)]
-    lambda_t = [p(0) * int_fol_cnt * lbd(0)]
-    memory_effect_t = [int_fol_cnt * lbd(0)]
-    n = round(runtime / dt)  # number of intervals
+    event_times = np.array([0])
+    follower = np.array([int_fol_cnt])
 
-    for i in range(1, n):
-        cur_interval = i * dt
-        x = rand.uniform()
-        memory_effect = sum([fol_cnt * lbd(cur_interval - event_time) for event_time, fol_cnt in events])
-        llambda = p(cur_interval + start_time) * memory_effect * dt  # intensity for current interval
+    lambda_t = [p(0) * int_fol_cnt * kernel(0)]
+    memory_effect_t = [int_fol_cnt * kernel(0)]
+
+    for cur_interval in np.arange(0, runtime - dt, dt):
+
+        memory_effect = sum(follower * kernel(cur_interval - event_times))
+        llambda = p(cur_interval) * memory_effect * dt  # intensity for current interval
 
         lambda_t.append(llambda)
         memory_effect_t.append(memory_effect)
 
-        if x < llambda:  # event occurred
-            events.append((int(cur_interval), rand_followers_extended(int_fol_cnt, follower_mean, split)))
-    return events, lambda_t, memory_effect_t
+        if rand.uniform() < llambda:  # event occurred
+            if follower_pool is not None:
+                fol = rand.choice(follower_pool)
+            else:
+                fol = rand_followers_extended(int_fol_cnt, follower_mean, split)
+            event_times = np.append(event_times, cur_interval)
+            follower = np.append(follower, fol)
+
+    return (event_times, follower), lambda_t, memory_effect_t
