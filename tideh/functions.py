@@ -139,7 +139,7 @@ def infectious_rate_tweets(t, p0=0.001, r0=0.424, phi0=0.125, taum=2., t0=0, tm=
     :param t0: start time of observation (in hours)
     :param tm: cyclic property (after what time a full circle passed, in hours)
     :param bounds: bounds for r0 and taum
-    :return: intensity for point t
+    :return: infectiousness for time t
     """
     if bounds is not None:
         if not (bounds[0][0] < r0 < bounds[1][0]):
@@ -164,7 +164,7 @@ def infectious_rate_tweets_vec(t, p0=0.001, r0=0.424, phi0=0.125, taum=2., t0=0,
     :param t0: start time of observation (in hours)
     :param tm: cyclic property (after what time a full circle passed, in hours)
     :param bounds: bounds for r0 and taum
-    :return: intensities for given points
+    :return: infectiousness for given t
     """
     if bounds is not None:
         if not (bounds[0][0] < r0 < bounds[1][0]):
