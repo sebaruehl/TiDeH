@@ -47,33 +47,35 @@ def rand_followers_extended(initial, scale_factor=100, split=0.02):
         return round(rand.uniform(0.05 * initial, 0.6 * initial))
 
 
-def solve_integral(ti, X, kernel, p, events, dt, Tmax):
+def solve_integral(ti, kernel, p, event_times, follower, dt, t_max):
     """
     Helper function for simulation using time rescaling.
     """
     partial_sum = 0
     last_partial_sum = 0
     t = ti
-    lambda_0 = p(t) * sum([fol_count * kernel(t - event_time) for event_time, fol_count in events])
+    lambda_0 = p(t) * sum(follower * kernel(t - event_times))
     lambda_1 = None
-    while partial_sum < X:
+
+    x = rand.exponential()
+    while partial_sum < x:
         t += dt
-        lambda_1 = p(t) * sum([fol_count * kernel(t - event_time) for event_time, fol_count in events])
+        lambda_1 = p(t) * sum(follower * kernel(t - event_times))
         partial_sum += dt * (lambda_0 + lambda_1) / 2
 
-        if partial_sum < X:
+        if partial_sum < x:
             lambda_0 = lambda_1
             last_partial_sum = partial_sum
-        if t > Tmax:
+        if t > t_max:
             return -1
 
     dlam = (lambda_1 - lambda_0) / dt
-    du = X - last_partial_sum
+    du = x - last_partial_sum
     s = (sqrt(lambda_0 * lambda_0 + 2 * dlam * du) - lambda_0) / dlam
     return t - dt + s
 
 
-def simulate_time_rescaling(runtime, kernel=functions.kernel_zhao, p=functions.infectious_rate_tweets, dt=0.01,
+def simulate_time_rescaling(runtime, kernel=functions.kernel_zhao_vec, p=functions.infectious_rate_tweets, dt=0.01,
                             follower_pool=None, int_fol_cnt=10000, follower_mean=200, split=0.015):
     """
     Simulates time dependent Hawkes process using time rescaling.
@@ -88,29 +90,25 @@ def simulate_time_rescaling(runtime, kernel=functions.kernel_zhao, p=functions.i
     :param int_fol_cnt: initial follower value
     :param follower_mean: mean of generated followers
     :param split: percentage for when the follower should be generated very big
-    :return: list of event tuples
+    :return: 2-tuple of event_times and follower nd-arrays
     """
-    events = [(0, int_fol_cnt)]
-    ti = 0
-    print_cnt = 0
+    event_times = np.array([0])
+    follower = np.array([int_fol_cnt])
 
-    while 0 <= ti < runtime and len(events) < 4500:
-        X = rand.exponential()
-        tj = solve_integral(ti, X, kernel, p, events, dt, runtime)
+    ti = 0
+
+    while 0 <= ti < runtime and len(event_times) < 4500:  # stop if there are too many events
+        tj = solve_integral(ti, kernel, p, event_times, follower, dt, runtime)
         if follower_pool is not None:
             fol = rand.choice(follower_pool)
         else:
             fol = rand_followers_extended(int_fol_cnt, follower_mean, split)
         if tj > 0:
-            events.append((tj, fol))
+            event_times = np.append(event_times, tj)
+            follower = np.append(follower, fol)
         ti = tj
-        if print_cnt % 100 == 0:
-            print("Simulating [%f%%]..." % (ti / runtime * 100), flush=True)
-        print_cnt += 1
 
-    print("\nOver %d events generated" % len(events))
-
-    return events
+    return event_times, follower
 
 
 def simulate_hawkes_time_increment(runtime, dt=0.01, kernel=functions.kernel_zhao_vec,
@@ -132,14 +130,14 @@ def simulate_hawkes_time_increment(runtime, dt=0.01, kernel=functions.kernel_zha
     :param int_fol_cnt: initial follower count for follower generation
     :param follower_mean: mean value of follower for follower generation
     :param split: split parameter for follower generation
-    :return: 3-tuple, holding list tuple of event_imes and follower nd-arrays, list of intensity for every interval,
+    :return: 3-tuple, tuple of event_times and follower nd-arrays, list of intensity for every interval,
     list of memory effect for every interval
     """
     event_times = np.array([0])
     follower = np.array([int_fol_cnt])
 
-    lambda_t = [p(0) * int_fol_cnt * kernel(0)]
-    memory_effect_t = [int_fol_cnt * kernel(0)]
+    lambda_t = [p(0) * int_fol_cnt * kernel(0.)]
+    memory_effect_t = [int_fol_cnt * kernel(0.)]
 
     for cur_interval in np.arange(0, runtime - dt, dt):
 
