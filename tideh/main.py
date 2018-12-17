@@ -384,3 +384,32 @@ def training_cross_validation(events_data, iterations, start_values, simplex=Non
     median_err = np.median(error)
 
     return (mean_err, median_err, param_res), (res, error)
+
+
+def follower_tanh(follower, a):
+    """
+    Transforms follower numbers according to function f(x) = a * tanh(x/a).
+
+    :param follower: nd-array of follower count
+    :param a: threshold to reduce follower numbers to
+    :return: nd-array of transformed follower counts
+    """
+    return a * np.tanh(follower / a)
+
+
+def follower_random_network(follower, p):
+    """
+    Transforms follower while assuming a random network where follower are connected with each other by probability p.
+
+    :param follower: nd-array of follower count
+    :param p: interconnection probability
+    :return: nd-array of transformed follower counts
+    """
+    new_fol = [follower[0]]
+    sum_run = follower[0]
+    for f in follower[1:]:
+        fn = max(0, f - p * sum_run)
+        sum_run += fn
+        new_fol.append(fn)
+
+    return np.array(new_fol)
