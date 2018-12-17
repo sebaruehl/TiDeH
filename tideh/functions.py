@@ -174,6 +174,23 @@ def infectious_rate_tweets_vec(t, p0=0.001, r0=0.424, phi0=0.125, taum=2., t0=0,
     return p0 * (1. - r0 * np.sin((48. / tm) * np.pi * ((t + t0) / 24. + phi0))) * np.exp(-t / (24. * taum))
 
 
+def infectious_rate_dv_p0(t, r0=0.424, phi0=0.125, taum=2., t0=0, tm=24.):
+    """
+    Derivation of infectious rate after p0.
+
+    Required for direct maximum likelihood estimation.
+
+    :param t: points to evaluate function at, shoult be nd-arrays (in hours)
+    :param r0:  amplitude
+    :param phi0:  shift (in days)
+    :param taum:  decay/freshness (in days)
+    :param t0: start time of observation (in hours)
+    :param tm: cyclic property (after what a fill circle passed, on hours)
+    :return: infectious rate derived after p0
+    """
+    return (1. - r0 * np.sin((48. / tm) * np.pi * ((t + t0) / 24. + phi0))) * np.exp(-t / (24. * taum))
+
+
 def sigmoid(x):
     """
     Calculates sigmoid function for value x.

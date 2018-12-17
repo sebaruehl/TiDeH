@@ -19,6 +19,8 @@ References
 
 from . import functions
 
+import numpy as np
+
 
 def estimate_infectious_rate_constant(events, t_start, t_end, kernel_integral, count_events=None):
     """
@@ -150,6 +152,33 @@ def estimate_infectious_rate_vec(event_times, follower, kernel_integral=function
         estimations.append(est)
 
     return estimations, window_event_count, window_middle
+
+
+def estimate_p0_vec(event_times, follower, obs_time=6, f=functions.infectious_rate_dv_p0, kernel=functions.kernel_zhao_vec,
+                    dt=0.001, **params):
+    """
+    Directly estimates parameter p0 of the infectious rate using maximum likelihood estimation.
+    Other parameters of the infectious rate are constant and are passed in **params.
+
+    :param event_times: nd-array of event times
+    :param follower: nd-array of follower counts
+    :param obs_time: observation time
+    :param f: function that derives infectious rate after p0
+    :param kernel: function for calculating the integral of the kernel
+    :param dt: interval size used for integral discretization
+    :param params: additional parameters passed to f
+    :return: estimate of p0
+    """
+    e_t = event_times[event_times < obs_time]
+    fol = follower[event_times < obs_time]
+
+    ints = np.arange(0, obs_time, dt)
+
+    dp = f(ints, **params)
+    k_sum = np.array([np.sum(fol * kernel(dtt - e_t)) for dtt in ints])
+    gt = dp * k_sum * dt
+
+    return e_t.size / gt.sum()
 
 
 def get_event_count(event_times, start, end):
