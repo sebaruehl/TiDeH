@@ -19,6 +19,8 @@ References
 
 from . import functions
 
+import numpy as np
+
 
 def estimate_infectious_rate_constant(events, t_start, t_end, kernel_integral, count_events=None):
     """
@@ -82,7 +84,7 @@ def estimate_infectious_rate(events, kernel_integral=functions.integral_zhao, ob
     count_current = 0  # current count of events in a window
     count_diff = 1  # count of events in current stride window; do not count the first event (initial tweet)
 
-    for start in range(0, obs_time - window_size + window_stride, window_stride):
+    for start in np.arange(0, obs_time - window_size + window_stride, window_stride):
         end = start + window_size
 
         # count up current events in window and add them to to events array
@@ -132,7 +134,7 @@ def estimate_infectious_rate_vec(event_times, follower, kernel_integral=function
     window_middle = []
     window_event_count = []
 
-    for start in range(0, obs_time - window_size + window_stride, window_stride):
+    for start in np.arange(0, obs_time - window_size + window_stride, window_stride):
         end = start + window_size
 
         mask = event_times < end  # all events up until end of current interval
