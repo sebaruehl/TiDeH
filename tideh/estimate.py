@@ -138,7 +138,7 @@ def estimate_infectious_rate_vec(event_times, follower, kernel_integral=function
         end = start + window_size
 
         mask = event_times < end  # all events up until end of current interval
-        count_current = get_event_count(event_times, start, end)
+        count_current = functions.get_event_count(event_times, start, end)
 
         est = estimate_infectious_rate_constant_vec(event_times[mask],
                                                     follower[mask],
@@ -152,16 +152,3 @@ def estimate_infectious_rate_vec(event_times, follower, kernel_integral=function
         estimations.append(est)
 
     return estimations, window_event_count, window_middle
-
-
-def get_event_count(event_times, start, end):
-    """
-    Count of events in given interval.
-
-    :param event_times: nd-array of event times
-    :param start: interval start
-    :param end: interval end
-    :return: count of events in interval
-    """
-    mask = (event_times > start) & (event_times <= end)
-    return event_times[mask].size

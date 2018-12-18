@@ -132,7 +132,7 @@ def predict(events, obs_time=6, pred_time=168, window=4, kernel=functions.kernel
         t_end = t_cur + window
         if t_end > pred_time:
             break
-        count_current = estimate.get_event_count(events_time_pred, t_cur, t_end)
+        count_current = functions.get_event_count(events_time_pred, t_cur, t_end)
         pred_count = dt * l_t[(i * win_int):((i + 1) * win_int)].sum()
         err += abs(count_current - pred_count)
 
@@ -140,12 +140,16 @@ def predict(events, obs_time=6, pred_time=168, window=4, kernel=functions.kernel
 
 
 def predict_optimized(event_times, follower, obs_time=6, pred_time=168, window=4, kernel=functions.kernel_zhao_vec,
-                      dt=0.1, p=functions.infectious_rate_tweets_vec, p_max=0.001424, params=None, **p_params):
+                      dt=0.1, p=functions.infectious_rate_tweets_vec, p_max=0.001424, params=None,
+                      ef=functions.prediction_error_absolute, **p_params):
     """
     Predicts infectious rate for given prediction period and infectious rate. Also calculates prediction error for given
     prediction window size if there are events available for the prediction period.
 
     Parameter p_max can be used to hinder the prediction to burst.
+
+    It is possible to use different ways of calculating the prediction error. A suitable function can be given in the ef
+    parameter. Such functions should always follow the same signature, for an example see the passed default function.
 
     Optimized version using numpy. Passed functions should expect numpy arrays as input.
 
@@ -161,6 +165,7 @@ def predict_optimized(event_times, follower, obs_time=6, pred_time=168, window=4
     :param p_max: maximum value of p
     :param params: possibility to pass parameters in array format to infectious rate, should follow correct parameter
     ordering, alternative way is to pass all parameters within p_params
+    :param ef: function used for calculating prediction error
     :param p_params: additional named parameters (dict) passed to infectious rate function
     :return: 3-tuple holding estimated integral values, total number of predicted retweets, and total prediction error
     """
@@ -174,18 +179,7 @@ def predict_optimized(event_times, follower, obs_time=6, pred_time=168, window=4
                                                          p=lambda y: p(y, *params, **p_params), kernel=kernel, dt=dt,
                                                          p_max=p_max)
 
-    events_time_pred = event_times[event_times >= obs_time]
-
-    win_int = int(window / dt)
-    tp = np.arange(obs_time, pred_time, window)
-    err = 0
-    for i, t_cur in enumerate(tp):
-        t_end = t_cur + window
-        if t_end > pred_time:
-            break
-        count_current = estimate.get_event_count(events_time_pred, t_cur, t_end)
-        pred_count = dt * lambda_t[(i * win_int):((i + 1) * win_int)].sum()
-        err += abs(count_current - pred_count)
+    err = ef(event_times, lambda_t, window, obs_time, pred_time, dt)
 
     return lambda_t, total, err
 

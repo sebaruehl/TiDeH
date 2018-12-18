@@ -179,3 +179,105 @@ def sigmoid(x):
     Calculates sigmoid function for value x.
     """
     return 1 / (1 + exp(-x))
+
+
+def get_event_count(event_times, start, end):
+    """
+    Count of events in given interval.
+
+    :param event_times: nd-array of event times
+    :param start: interval start
+    :param end: interval end
+    :return: count of events in interval
+    """
+    mask = (event_times > start) & (event_times <= end)
+    return event_times[mask].size
+
+
+def prediction_error_absolute(event_times, intensity, window_size, obs_time, pred_time, dt):
+    """
+    Calculates absolute prediction error.
+
+    :param event_times: event times
+    :param intensity: predicted intensity
+    :param window_size: prediction window size
+    :param obs_time: observation time
+    :param pred_time: prediction time
+    :param dt: interval width for numerical integral calculation used for intensity prediction
+    :return: absolute prediction error
+    """
+    events_time_pred = event_times[event_times >= obs_time]
+    win_int = int(window_size / dt)
+    tp = np.arange(obs_time, pred_time, window_size)
+    err = 0
+    for i, t_cur in enumerate(tp):
+        t_end = t_cur + window_size
+        if t_end > pred_time:
+            break
+        count_current = get_event_count(events_time_pred, t_cur, t_end)
+        pred_count = dt * intensity[(i * win_int):((i + 1) * win_int)].sum()
+        err += abs(count_current - pred_count)
+
+    return err
+
+
+def prediction_error_normed(event_times, intensity, window_size, obs_time, pred_time, dt):
+    """
+    Calculates normed prediction error.
+
+    :param event_times: event times
+    :param intensity: predicted intensity
+    :param window_size: prediction window size
+    :param obs_time: observation time
+    :param pred_time: prediction time
+    :param dt: interval width for numerical integral calculation used for intensity prediction
+    :return: normed prediction error
+    """
+    err_abs = prediction_error_absolute(event_times, intensity, window_size, obs_time, pred_time, dt)
+
+    events_time_pred = event_times[event_times >= obs_time]
+    total_count_real = get_event_count(events_time_pred, obs_time, pred_time)
+
+    if total_count_real == 0 and err_abs == 0:
+        err_normed = 0
+    elif total_count_real == 0:
+        err_normed = 10  # if there are no events in prediction period set error to very high value
+    else:
+        err_normed = err_abs / total_count_real
+
+    return err_normed
+
+
+def prediction_error_relative(event_times, intensity, window_size, obs_time, pred_time, dt):
+    """
+    Calculates median relative running error.
+
+    :param event_times: event times
+    :param intensity: predicted intensity
+    :param window_size: prediction window size
+    :param obs_time: observation time
+    :param pred_time: prediction time
+    :param dt: interval width for numerical integral calculation used for intensity prediction
+    :return: normed prediction error
+    """
+    events_time_pred = event_times[event_times >= obs_time]
+    events_in_obs_time = get_event_count(events_time_pred, 0, obs_time)
+
+    win_int = int(window_size / dt)
+    tp = np.arange(obs_time, pred_time, window_size)
+    cnt_total_real = events_in_obs_time
+    cnt_total_pred = events_in_obs_time
+    err_rel_running = []
+    for i, t_cur in enumerate(tp):
+        t_end = t_cur + window_size
+        if t_end > pred_time:
+            break
+        count_current = get_event_count(events_time_pred, t_cur, t_end)  # real event count in interval
+        pred_count = dt * intensity[(i * win_int):((i + 1) * win_int)].sum()  # predicted event count in interval
+
+        cnt_total_real += count_current
+        cnt_total_pred += pred_count
+        rel_tmp = 1 - (np.minimum(cnt_total_real, cnt_total_pred) / np.maximum(cnt_total_real, cnt_total_pred))
+        err_rel_running.append(rel_tmp)
+
+    return np.median(err_rel_running)
