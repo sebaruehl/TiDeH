@@ -8,7 +8,7 @@ If only a specific feature is required use the designated branch.
 New features are
 - Multi core support for training algorithm (improved runtime)
 - Optimization of simulation algorithms (improved runtime)
-- Estimation of $p_{0}$ using maximum likelihood estimation
+- Estimation of p0 using maximum likelihood estimation
 - Functions for follower count transformation
 - Alternative error calculation methods
 
