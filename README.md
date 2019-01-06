@@ -1,3 +1,18 @@
+## Differences of this fork to the main project
+
+This fork implements several new features that may be added at a later time to the main project.
+
+Some of these feature are just for testing and not always lead to better prediction performance.
+If only a specific feature is required use the designated branch.
+
+New features are
+- Multi core support for training algorithm (improved runtime)
+- Optimization of simulation algorithms (improved runtime)
+- Estimation of $p_{0}$ using maximum likelihood estimation
+- Functions for follower count transformation
+- Alternative error calculation methods
+
+
 # Prediction of Twitter retweet dynamic using time dependant Hawkes Process
 
 This is the code illustrating the *Kobayashi & Lambiotte 2016* paper and aims at
